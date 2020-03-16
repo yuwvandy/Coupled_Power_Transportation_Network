@@ -56,7 +56,7 @@ class TrafficFlowModel:
             self.network.add_edge(link)
             
         
-    def solve(self, accuracy, detail, precision):
+    def solve_golden_section(self, accuracy, detail, precision):
         ''' Solve the traffic flow assignment model (user equilibrium)
             by Frank-Wolfe algorithm, all the necessary data must be 
             properly input into the model in advance.
@@ -95,7 +95,7 @@ class TrafficFlowModel:
 
             # Step 3: Linear Search
             opt_theta = self.__golden_section(link_flow, auxiliary_link_flow)
-            
+#            opt_theta = self.__bisection(link_flow, auxiliary_link_flow)
             # Step 4: Using optimal theta to update the link flow matrix
             new_link_flow = (1 - opt_theta) * link_flow + opt_theta * auxiliary_link_flow
 
@@ -119,6 +119,124 @@ class TrafficFlowModel:
         self.report()
         self._formatted_solution()
         
+    def solve_CFW(self, epsilon, accuracy, delta):
+        ''' Solve the traffic flow assignment model (user equilibrium)
+            by Conjugate-Frank-Wolfe algorithm, all the necessary data must be 
+            properly input into the model in advance. 
+
+            (Implicitly) Return
+            ------
+            self.__solved = True
+        '''
+        if self.detail:
+            print(self.__dash_line())
+            print("TRAFFIC FLOW ASSIGN MODEL (USER EQUILIBRIUM) \nFRANK-WOLFE ALGORITHM - DETAIL OF ITERATIONS")
+            print(self.__dash_line())
+            print(self.__dash_line())
+            print("Initialization")
+            print(self.__dash_line())
+        
+        # Step 0: based on the x0, generate the x1
+
+        empty_flow = np.zeros(self.network.num_of_links())
+        self.link_flow = self.all_or_nothing_assign(empty_flow)
+
+        
+        counter = 0
+        while True:
+            
+#            if self.detail:
+#                print(self.__dash_line())
+#                print("Iteration %s" % counter)
+#                print(self.__dash_line())
+#                print("Current link flow:\n%s" % self.link_flow)
+
+            # Step 1 & Step 2: Use the link flow matrix -x to generate the time, then generate the auxiliary link flow matrix -y
+            self.auxiliary_link_flow = self.all_or_nothing_assign(self.link_flow)
+            if(counter == 0):
+                self.conjugate_flow = self.auxiliary_link_flow
+            
+            #step3 : find the conjugate direction
+            if(counter != 0):
+                lamb = self.__conjugate_direction(self.link_flow, self.auxiliary_link_flow, self.conjugate_flow, delta)
+                self.conjugate_flow = lamb*self.conjugate_flow + (1 - lamb)*self.auxiliary_link_flow
+            
+            # Step 3: Linear Search
+            opt_theta = self.__bisection(self.link_flow, self.conjugate_flow, epsilon)
+            
+            # Step 4: Using optimal theta to update the link flow matrix
+            self.new_link_flow = (1 - opt_theta) * self.link_flow + opt_theta * self.conjugate_flow
+
+            # Print the detail if necessary
+            if self.detail:
+                print("Optimal theta: %.8f" % opt_theta)
+#                print("Auxiliary link flow:\n%s" % self.auxiliary_link_flow)
+            
+            # Step 5: Check the Convergence, if FALSE, then return to Step 1
+            if self.__is_convergent3(accuracy):
+                if self.detail:
+                    print(self.__dash_line())
+                self.solved = True
+                self.final_link_flow = self.new_link_flow
+                self.iterations_times = counter
+                break
+            else:
+                self.link_flow = self.new_link_flow
+                counter += 1
+        self.report()
+        self._formatted_solution()
+            
+    def __conjugate_direction(self, flow, auxiliary_flow, conjugate_flow, delta):
+        '''Calculate the direction to get the conjugate flow
+        '''
+        temp1 = auxiliary_flow - flow
+        temp2 = conjugate_flow - flow
+        temp3 = temp1 - temp2
+
+        Hessian = self.__Hessian(flow, self.link_free_time, self.link_capacity)
+        
+        N = np.matmul(np.matmul(temp2, Hessian), temp1)
+        D = np.matmul(np.matmul(temp2, Hessian), temp3)
+        
+        if(D != 0):
+            temp = N/D
+            if(temp >= 0 and temp <= 1 - delta):
+                theta = N/D
+            else:
+                theta = 1 - delta
+        else:
+            theta = 0
+        
+        return theta
+        
+    def __Hessian(self, flow, t0, capacity):
+        '''Calculate the Hessian Matrix
+        '''
+        Hessian = np.zeros([len(flow), len(flow)])
+        for i in range(len(flow)):
+            temp = self._alpha*self._beta*t0[i]/capacity[i]
+            Hessian[i, i] = temp*(flow[i]/capacity[i])**(self._beta - 1)
+        
+        return Hessian
+    
+    def __is_convergent3(self, accuracy):
+        '''Check whether the current flow is the minimum flow using criterian 3
+        '''
+        link_time = self.link_flow_to_link_time(self.new_link_flow)
+        
+        denomintor = np.sum(link_time*self.new_link_flow)
+        
+        self.all_or_nothing_assign(self.new_link_flow)
+        numerator = np.sum(self.demand*np.array(self.path_time_min_OD))
+        
+        
+        relative_gap = (denomintor - numerator)/denomintor
+        print(relative_gap)
+        if(relative_gap < accuracy):
+            return True
+        else:
+            return False
+        
     def _formatted_solution(self):
         ''' According to the link flow we obtained in `solve`,
             generate a tuple which contains four elements:
@@ -129,8 +247,8 @@ class TrafficFlowModel:
         '''
         if self.solved:
             link_flow = self.final_link_flow
-            link_time = self.__link_flow_to_link_time(link_flow)
-            path_time = self.__link_time_to_path_time(link_time)
+            link_time = self.link_flow_to_link_time(link_flow)
+            path_time = self.link_time_to_path_time(link_time)
             link_vc = link_flow / self.link_capacity
             return link_flow, link_time, path_time, link_vc
         else:
@@ -184,7 +302,24 @@ class TrafficFlowModel:
         else:
             raise ValueError("The report could be generated only after the model is solved!")
 
-    def __all_or_nothing_assign(self, link_flow):
+    def __bisection(self, link_flow, auxiliary_link_flow, epsilon = 1e-4):
+            '''Bisection method to calculate the optimal step
+            '''
+            theta_h = 1
+            theta_l = 0
+    
+            while(theta_h - theta_l > epsilon):    
+                theta = 0.5*(theta_l + theta_h)
+                new_flow = theta*auxiliary_link_flow + (1 - theta)*link_flow
+                new_time = self.link_flow_to_link_time(new_flow)
+                total_time = np.sum(new_time*(auxiliary_link_flow - link_flow))
+                if(total_time > 0):
+                    theta_h = theta
+                else:
+                    theta_l = theta
+            return theta
+        
+    def all_or_nothing_assign(self, link_flow):
         ''' Perform the all-or-nothing assignment of
             Frank-Wolfe algorithm in the User Equilibrium
             Traffic Assignment Model.
@@ -196,15 +331,17 @@ class TrafficFlowModel:
             The input is an array.
         '''
         # LINK FLOW -> LINK TIME
-        link_time = self.__link_flow_to_link_time(link_flow)
+        link_time = self.link_flow_to_link_time(link_flow)
+        self.link_time = link_time
         # LINK TIME -> PATH TIME
-        path_time = self.__link_time_to_path_time(link_time)
+        path_time = self.link_time_to_path_time(link_time)
 
         # PATH TIME -> PATH FLOW
         # Find the minimal traveling time within group 
         # (splited by origin - destination pairs) and
         # assign all the flow to that path
         path_flow = np.zeros(self.network.num_of_paths())
+        self.path_time_min_OD = []
         for OD_pair_index in range(self.network.num_of_OD_pairs()):
             indice_grouped = []
             for path_index in range(self.network.num_of_paths()):
@@ -212,6 +349,7 @@ class TrafficFlowModel:
                     indice_grouped.append(path_index)
             sub_path_time = [path_time[ind] for ind in indice_grouped]
             min_in_group = min(sub_path_time)
+            self.path_time_min_OD.append(min_in_group)
             ind_min = sub_path_time.index(min_in_group)
             target_path_ind = indice_grouped[ind_min]
             path_flow[target_path_ind] = self.demand[OD_pair_index]
@@ -221,11 +359,11 @@ class TrafficFlowModel:
 #            print("Path time:\n%s" % path_time)
         
         # PATH FLOW -> LINK FLOW
-        new_link_flow = self.__path_flow_to_link_flow(path_flow)
+        new_link_flow = self.path_flow_to_link_flow(path_flow)
 
         return new_link_flow
         
-    def __link_flow_to_link_time(self, link_flow):
+    def link_flow_to_link_time(self, link_flow):
         ''' Based on current link flow, use link 
             time performance function to compute the link 
             traveling time.
@@ -239,7 +377,7 @@ class TrafficFlowModel:
                                                         self.t_service[i], self.hd[i])
         return link_time
 
-    def __link_time_to_path_time(self, link_time):
+    def link_time_to_path_time(self, link_time):
         ''' Based on current link traveling time,
             use link-path incidence matrix to compute 
             the path traveling time.
@@ -248,7 +386,7 @@ class TrafficFlowModel:
         path_time = link_time.dot(self.network.LP_matrix())
         return path_time
     
-    def __path_flow_to_link_flow(self, path_flow):
+    def path_flow_to_link_flow(self, path_flow):
         ''' Based on current path flow, use link-path incidence 
             matrix to compute the traffic flow on each link.
             The input is an array.
@@ -269,9 +407,9 @@ class TrafficFlowModel:
             the same link, consisting of two parts: normal time + intersection delay
         '''
         t_norm = self.__link_time_performance_norm(link_flow, t0, capacity, link_function)
-#        t_inter = self.__link_time_performance_intersection(link_flow, link_function, link_type, link_sigfun, Cycle, Green, capacity, t_service, hd)
-#        value = t_norm + t_inter
-        value = t_norm + 0
+        t_inter = self.__link_time_performance_intersection(link_flow, link_function, link_type, link_sigfun, Cycle, Green, capacity, t_service, hd)
+        value = t_norm + t_inter
+#        value = t_norm
         return value
     
     def __link_time_performance_norm(self, link_flow, t0, capacity, link_function):
@@ -305,10 +443,11 @@ class TrafficFlowModel:
         temp0 = link_flow/(link_function*Capacity)
         temp1 = temp0/(link_function*Capacity)
         temp2 = 0.5*Cycle*(1-Green/Cycle)/(1 - min(1, temp0)*Green/Cycle)
-        temp3 = 900/4*(temp0 - 1 + ((temp0 - 1)**2 + 16*temp1)**0.5)
+        temp3 = 900/4*((temp0 - 1)**2 + (16*temp1)**0.5)
         
-        value = temp2 + temp3
-
+#        value = temp2 + temp3
+        value = temp2
+        
         return value
     
     def __link_time_performance_intersection_unsig(self, link_flow, t_service, hd):

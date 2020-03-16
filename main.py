@@ -86,6 +86,7 @@ def Power_Performance(length, Num):
     
 def Performance(TXTflow, fail_history, Hnum, Num, PowerNum):
     TXTflow.performance = np.empty([Hnum, Num], dtype = object)
+    temp = 0
     for i in range(Hnum):
         Temp_fail = fail_history[i]
         for j in range(Num):
@@ -104,16 +105,16 @@ def Performance(TXTflow, fail_history, Hnum, Num, PowerNum):
                 
                 TXTflow.link_sigfun = SigFun
     
-                TXTflow.solve(td.accuracy, td.detail, td.precision)
+                TXTflow.solve_CFW(1e-6, 1e-5, 1e-2)
                 TXTflow.performance[i, j].append(TXTflow.Cal_performance())
-
+                print(temp)
+                temp += 1
 #Define the traffic network
 TXtraffic = Transportation(graph_dict = td.Tadjl, color = td.color, name = td.name, lat = td.lat, lon = td.lon, nodenum = td.nodenum, edgenum = td.edgenum, \
                            O = td.O, D = td.D, nodefile = td.nodefile, edgefile = td.edgefile, Type = td.Type)
 #Define the power network
 TXpower = Power(graph_dict = pd.Padjl, color = pd.color, name = pd.name, lat = pd.lat, lon = pd.lon, nodenum = pd.nodenum, edgenum = pd.edgenum, \
                 nodefile = pd.nodefile, edgefile = pd.edgefile, Type = pd.Type)
-
 
 ##Define the interdependency
 TX_TPInter1 = interlink.PTinter1(TXpower, TXtraffic, name = 'TX_PowerSignal', color = 'orange')
@@ -126,13 +127,26 @@ TXPflow = PowerFlowModel(TXpower)
 TXPflow.load([100]*TX_TPInter1.network2.Nnum, TX_TPInter1)
 TXPflow.optimizationprob(cost = 1)
 TXPflow.solve()
+TXpower.topology(pd.nodefile, pd.edgefile, pd.Type)
+TXpower.Networkflowplot()
 
 
 ##Transportation flow
 TXTflow = TrafficFlowModel(td.Tadjl, td.origins, td.destinations, td.demand, td.free_time, td.capacity, td.function, \
                        td.InterType, td.SigFun, td.Cycle, td.Green, td.t_service, td.hd, TXtraffic)
 
-TXTflow.solve(td.accuracy, td.detail, td.precision)
+#Goldensection method
+#TXTflow.solve(td.accuracy, td.detail, td.precision)
+
+TXTflow.solve_CFW(1e-6, 1e-5, 1e-2)
+
+TXtraffic.topology(td.nodefile, td.edgefile, td.Type)
+TXtraffic.Networkflowplot()
+
+#Plot the traffic and power network in 2D and 3D respectively
+TXpower.topology(pd.nodefile, pd.edgefile, pd.Type)
+TXpower.Networkflowplot()
+TXtraffic.Networkflowplot()
 
 TX_TP = system(name = 'TX_TP', networks = [TXpower, TXtraffic], inters = [TX_TPInter1])
 TX_TP.Systemplot3d()
@@ -140,12 +154,12 @@ TX_TP.local_global_adj_flow()
 TX_TPInter1.system = TX_TP
 
 #Peform the hurricane simulation
-Num = 1
+Num = 50
 Length, Hurricanes = Failure_Simulation(Num)
 Power_Performance(Length, Num)
 
 #Plot the power network performance under each hurricane sceneria
-H_perform_plot(TXpower.performance, Hurricanes)
+H_perform_plot(TXpower.performance[:, :180], Hurricanes)
 
 #Calculate the conditional failure probability
 TX_TPInter1.Conditional_prob(0, Num)

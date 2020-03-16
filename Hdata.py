@@ -17,7 +17,7 @@ color = ['red', 'lightsalmon', 'orange', 'darkkhaki', 'olivedrab', \
          'yellowgreen', 'skyblue', 'teal', 'darkorchid', 'plum', \
          'darkviolet', 'black' ,'grey' ,'navy', 'wheat']
 
-Data_Location = r"C:\Users\wany105\Desktop\traffic and power\User-Equilibrium-Solution-master\User-Equilibrium-Solution-master\Hurricane\\"
+Data_Location = r"C:\Users\10624\Desktop\Coupled_Power_Transportation_Network\Hurricane\\"
 
 def GeoBound(Hnum, Hurricane_name, Data, Data_Location):
     """Find the boundary of the trajectory of the hurricane (in longitude and latitude form)

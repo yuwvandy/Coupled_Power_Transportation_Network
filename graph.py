@@ -127,7 +127,7 @@ class Graph(object):
         The location is given by some longitude and latitude interval
         """
         import os
-        os.environ['PROJ_LIB'] = r"C:\Users\wany105\AppData\Local\Continuum\anaconda3\pkgs\proj4-5.2.0-ha925a31_1\Library\share"
+        os.environ['PROJ_LIB'] = r"E:\Anaconda\pkgs\proj4-5.2.0-ha925a31_1\Library\share"
         
         from mpl_toolkits.basemap import Basemap #Basemap package is used for creating geography map
         from matplotlib import pyplot as plt
@@ -163,6 +163,23 @@ class Graph(object):
             tnode = self.linkt[i] - 1
             plt.plot([self.Nx[fnode], self.Nx[tnode]], [self.Ny[fnode], self.Ny[tnode]], color = self.c)
 
+    def Networkflowplot(self):
+        """Plot the network on the specified base map with flow
+        2 steps: plot the vertices, plot the links
+        """
+        from matplotlib import pyplot as plt
+
+        plt.scatter(self.Nx, self.Ny, color = self.c) #plot the vertices
+        for i in range(len(self.Nx)):
+            plt.annotate("{}".format(i + 1), xy = (self.Nx[i], self.Ny[i]))
+            
+        #flow normalization
+        Normflow = sf.Normalize(self.flow, Type = 'max')
+        for i in range(len(self.linkf)): #plot the links
+            fnode = self.linkf[i] - 1
+            tnode = self.linkt[i] - 1
+            plt.plot([self.Nx[fnode], self.Nx[tnode]], [self.Ny[fnode], self.Ny[tnode]], color = self.c, lw = 4*Normflow[fnode, tnode])
+            
     def vertices(self):
         """ returns the vertices of a graph
         """
