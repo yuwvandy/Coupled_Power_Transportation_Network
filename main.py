@@ -84,7 +84,7 @@ def Power_Performance(length, Num):
         
         TXpower.performance[i] = TXpower.performance[i]/Num
     
-def Performance(TXTflow, fail_history, Hnum, Num, PowerNum):
+def Performance(TXTflow, fail_history, Hnum, Num, PowerNum, TXpower, TXtraffic, TX_TPInter1):
     TXTflow.performance = np.empty([Hnum, Num], dtype = object)
     temp = 0
     for i in range(Hnum):
@@ -95,7 +95,10 @@ def Performance(TXTflow, fail_history, Hnum, Num, PowerNum):
             for m in range(len(single_fail)):
                 fail_list = single_fail[m]
                 SigFun = []
-            
+                TXpower.node_fail = fail_list[0:TXpower.Nnum]
+                TXtraffic.node_fail = fail_list[TXpower.Nnum:(TXpower.Nnum + TXtraffic.Nnum)]
+                TXpower.node_fail_to_link_fail()
+                TXtraffic.node_fail_to_link_fail()
                 for k in range(len(TXTflow.network.Adjl)):
                     for l in range(len(TXTflow.network.Adjl[k])):
                         if(fail_list[PowerNum + TXTflow.network.Adjl[k][l] - 1] == 1):
@@ -104,7 +107,7 @@ def Performance(TXTflow, fail_history, Hnum, Num, PowerNum):
                             SigFun.append(0)
                 
                 TXTflow.link_sigfun = SigFun
-    
+                TX_TPInter1.InterFunc_decrease(theta = 0.2)
                 TXTflow.solve_CFW(1e-6, 1e-5, 1e-2)
                 TXTflow.performance[i, j].append(TXTflow.Cal_performance())
                 print(temp)
@@ -121,6 +124,7 @@ TX_TPInter1 = interlink.PTinter1(TXpower, TXtraffic, name = 'TX_PowerSignal', co
 TX_TPInter1.distadj()
 DepenNum = [5]*TX_TPInter1.network2.Nnum
 TX_TPInter1.dependadj(DepenNum)
+TX_TPInter1.Intersection()
 
 ##Define the power flow
 TXPflow = PowerFlowModel(TXpower)
@@ -139,6 +143,7 @@ TXTflow = TrafficFlowModel(td.Tadjl, td.origins, td.destinations, td.demand, td.
 #TXTflow.solve(td.accuracy, td.detail, td.precision)
 
 TXTflow.solve_CFW(1e-6, 1e-5, 1e-2)
+TXtraffic.flowmodel = TXTflow
 
 TXtraffic.topology(td.nodefile, td.edgefile, td.Type)
 TXtraffic.Networkflowplot()
@@ -154,7 +159,7 @@ TX_TP.local_global_adj_flow()
 TX_TPInter1.system = TX_TP
 
 #Peform the hurricane simulation
-Num = 50
+Num = 1
 Length, Hurricanes = Failure_Simulation(Num)
 Power_Performance(Length, Num)
 
@@ -166,7 +171,7 @@ TX_TPInter1.Conditional_prob(0, Num)
 TX_TPInter1.heatmap_conditional_prob()
 
 ##Traffic Performance
-Performance(TXTflow, TX_TP.fail_history, Hcd.Hnum, Num, TXpower.Nnum)
+Performance(TXTflow, TX_TP.fail_history, Hcd.Hnum, Num, TXpower.Nnum, TXpower, TXtraffic, TX_TPInter1)
 
 
 

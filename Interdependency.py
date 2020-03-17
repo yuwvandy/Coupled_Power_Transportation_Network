@@ -110,6 +110,42 @@ class PTinter1(object):
         ax.set_xlabel('Transportation Intersection')
         ax.set_ylabel('Pole or Rod')
         
+    def Intersection(self):
+        """Calculate the intersection adjacent matrix for link sets of two networks
+        If link ID 1 in power network intersects with link ID 2 in transportation network
+        Than InterAdj(1, 2) = 1
+        """
+        import numpy as np
+        
+        self.InterAdj = np.zeros([self.network1.Enum, self.network2.Enum])
+        for i in range(self.network1.Enum):
+            for j in range(self.network2.Enum):
+                node1 = self.network1.linkf[i] - 1
+                node2 = self.network1.linkt[i] - 1
+                node3 = self.network2.linkf[j] - 1
+                node4 = self.network2.linkt[j] - 1
+                
+                node1xy = [self.network1.Nx[node1], self.network1.Ny[node1]]
+                node2xy = [self.network1.Nx[node2], self.network1.Ny[node2]]
+                node3xy = [self.network2.Nx[node3], self.network2.Ny[node3]]
+                node4xy = [self.network2.Nx[node4], self.network2.Ny[node4]]
+                
+                self.InterAdj[i, j] = sf.doIntersect(node1xy, node2xy, node3xy, node4xy)
+    
+    def InterFunc_decrease(self, theta):
+        """Calculate the function decrease of transportation link due to rod or pole fall
+        Equation (Assumed): Fun = f0*(1 - slope*sin)
+        """
+        import numpy as np
+        
+        self.Intersection()
+        for i in range(self.network2.Enum):
+            temp = self.InterAdj[:, i]*(1 - self.network1.link_fail)
+            sin_max = np.max(temp)
+            self.network2.flowmodel.link_capacity[i] = self.network2.flowmodel.link_capacity[i]*(1 - theta*sin_max)
+        
+        
+        
                 
             
             

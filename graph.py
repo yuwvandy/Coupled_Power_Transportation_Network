@@ -127,7 +127,7 @@ class Graph(object):
         The location is given by some longitude and latitude interval
         """
         import os
-        os.environ['PROJ_LIB'] = r"E:\Anaconda\pkgs\proj4-5.2.0-ha925a31_1\Library\share"
+        os.environ['PROJ_LIB'] = r"C:\Users\wany105\AppData\Local\Continuum\anaconda3\pkgs\proj4-5.2.0-ha925a31_1\Library\share"
         
         from mpl_toolkits.basemap import Basemap #Basemap package is used for creating geography map
         from matplotlib import pyplot as plt
@@ -280,3 +280,15 @@ class Graph(object):
         for edge in self.__generate_edges():
             res += str(edge) + " "
         return res
+    
+    def node_fail_to_link_fail(self):
+        """Create the failsure sequence of links based on the failure sequence of nodes
+        """
+        import numpy as np
+        
+        self.link_fail = np.ones(self.Enum)
+        for i in range(self.Enum):
+            node1 = self.linkt[i] - 1
+            node2 = self.linkf[i] - 1
+            if(self.node_fail[node1] == 0 or self.node_fail[node2] == 0):
+                self.link_fail[i] = 0
