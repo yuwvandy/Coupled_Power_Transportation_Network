@@ -132,13 +132,15 @@ class PTinter1(object):
                 
                 self.InterAdj[i, j] = sf.doIntersect(node1xy, node2xy, node3xy, node4xy)
     
-    def InterFunc_decrease(self, theta):
+    def InterFunc_decrease(self, theta, capacity):
         """Calculate the function decrease of transportation link due to rod or pole fall
         Equation (Assumed): Fun = f0*(1 - slope*sin)
         """
         import numpy as np
+        import copy
         
         self.Intersection()
+        self.network2.flowmodel.link_capacity = copy.copy(capacity)
         for i in range(self.network2.Enum):
             temp = self.InterAdj[:, i]*(1 - self.network1.link_fail)
             sin_max = np.max(temp)

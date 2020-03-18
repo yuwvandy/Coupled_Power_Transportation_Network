@@ -83,8 +83,12 @@ class PowerFlowModel:
         '''Create the flow matrix tracking down the solution for the intial flow optimization
         '''
         self.network.flow = np.zeros([self.network.Nnum, self.network.Nnum])
+        self.network.link_flow = np.zeros(self.network.Enum)
+        temp = 0
         for flow in self.flowlist:
             self.network.flow[flow[0], flow[1]] = flow[2].solution_value
+            self.network.link_flow[temp] = flow[2].solution_value
+            temp += 1
     
 
         

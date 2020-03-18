@@ -142,7 +142,119 @@ def vectorangle(n1xy, n2xy, n3xy, n4xy):
     sin = np.sqrt(1 - cos**2)
     
     return sin
+
+def Basemap(Type, lat, lon):
+    """Geographical Map within certain locations.
+    The location is given by some longitude and latitude interval
+    """
+    import os
+    os.environ['PROJ_LIB'] = r"C:\Users\wany105\AppData\Local\Continuum\anaconda3\pkgs\proj4-5.2.0-ha925a31_1\Library\share"
     
-  
+    from mpl_toolkits.basemap import Basemap #Basemap package is used for creating geography map
+    from matplotlib import pyplot as plt
+    import numpy as np
+    
+    latinter = lat[1] - lat[0]
+    loninter = lon[1] - lon[0]
+    
+    if(Type == 'local'):
+        Base = Basemap(projection = 'merc', resolution = 'l', area_thresh = 1000.0, lat_0=0, lon_0=0, llcrnrlon = lon[0], llcrnrlat = lat[0], urcrnrlon = lon[1], urcrnrlat = lat[1])
+    elif(Type == 'whole'):
+        Base = Basemap(resolution = 'l', area_thresh = 1000.0, lat_0=0, lon_0=0, llcrnrlon = lon[0], llcrnrlat = lat[1], urcrnrlon = lon[1], urcrnrlat = lat[1])
+    
+    plt.figure(figsize = (20, 10))    
+    Base.drawcoastlines()
+    Base.drawcountries()
+    Base.drawmapboundary()
+    Base.drawparallels(np.arange(lat[0] - latinter/5, lat[1] + latinter/5, latinter/5), labels=[1,0,0,1], fontsize = 10)
+    Base.drawmeridians(np.arange(lon[0] - loninter/5, lon[1] + loninter/5, loninter/5), labels=[1,1,0,1], fontsize = 10)
+    
+    return Base
+
+def Unit_Length(array):
+    """Unify the length of the performance list
+    """
+    temp1, temp2 = array.shape
+    max_length = 0
+    for i in range(temp1):
+        for j in range(temp2):
+            if(len(array[i, j]) > max_length):
+                max_length = len(array[i, j])
+
+    array2 = np.zeros([temp1, temp2, max_length])
+    for i in range(temp1):
+        for j in range(temp2):
+            single_perform = array[i, j]
+            for k in range(max_length):
+                if(k < len(single_perform)):
+                    array2[i, j, k] = single_perform[k]
+                else:
+                    array2[i, j, k] = single_perform[-1]
+    
+    return array2
+
+def Link_Flow_Barchart(data1, data2):
+    """Plot the Barchart of two type of data
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    fig = plt.figure(figsize = (8, 6))
+    width = 0.3
+    plt.bar(np.arange(len(data1)), data1, width=width, label = 'Without signal')
+    plt.bar(np.arange(len(data2))+ width, data2, width=width, label = 'With signal')
+    plt.xlabel('Link number')
+    plt.ylabel('Link flow')
+    plt.xticks(np.arange(0, len(data1), 1))
+    plt.legend(bbox_to_anchor=(1, 1), loc='upper left', ncol=1, frameon = 0)
+    plt.show()
+    
+def Link_Time_Barchart(data1, data2):
+    """Plot the Barchart of two type of data
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    fig = plt.figure(figsize = (8, 6))
+    width = 0.3
+    plt.bar(np.arange(len(data1)), data1, width=width, label = 'Without signal')
+    plt.bar(np.arange(len(data2))+ width, data2, width=width, label = 'With signal')
+    plt.xlabel('Link number')
+    plt.ylabel('Link cost\time')
+    plt.xticks(np.arange(0, len(data1), 1))
+    plt.legend(bbox_to_anchor=(1, 1), loc='upper left', ncol=1, frameon = 0)
+    plt.show()
+                
+def OD_Time_Barchart(data1, data2):
+    """Plot the Barchart of two type of data
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    width = 0.3
+    plt.bar(np.arange(len(data1)), data1, width=width, label = 'Without signal')
+    plt.bar(np.arange(len(data2))+ width, data2, width=width, label = 'With signal')
+    plt.xlabel('OD pair number')
+    plt.ylabel('Paths between OD pair cost/time')
+    plt.xticks(np.arange(0, len(data1), 1))
+    plt.legend(bbox_to_anchor=(1, 1), loc='upper left', ncol=1, frameon = 0)
+    plt.show()
+
+
+link_flow1 = [734.20, 725.80, 734.20, 387.01, 504.80, 858.81, 858.81, 0.00, 601.19, 792.56, 342.80, 471.80, 342.80, 814.60, 0.00, 157.62, 309.69, 491.37, 0.00, 0.00, 958.68, 436.50, 1050.95, 0.00, 607.44, 1167.12, 669.38, 730.62]
+link_flow2 = [735.44, 724.56, 735.44, 438.98, 299.45, 835.40, 835.40, 0.00, 624.60, 770.13, 271.15, 396.43, 271.15, 667.57, 0.00, 0.00, 368.12, 554.36, 0.00, 0.00, 925.47, 411.20, 1123.57, 0.00, 629.87, 1199.09, 612.11, 787.89]
+
+link_time1 = [44.666, 243.149, 254.166, 37.238, 4.947, 37.687, 11.528, 13.000, 30.081, 74.763, 9.298, 10.812, 20.651, 21.480, 9.000, 8.091, 13.036, 29.114, 11.000, 5.000, 47.595, 16.723, 35.350, 12.000, 110.110, 59.986, 21.763, 38.483]
+link_time2 = [59.922, 256.549, 270.831, 68.776, 17.231, 49.685, 25.845, 23.000, 49.221, 82.627, 21.323, 23.567, 28.561, 27.982, 19.000, 18.033, 34.052, 53.485, 21.000, 15.000, 57.387, 30.294, 58.424, 22.000, 141.052, 80.577, 33.226, 63.519]
+
+path_time1 = [385.286, 429.972, 163.903, 208.589]
+path_time2 = [475.059, 508.478, 251.744, 285.158]
+
+Link_Flow_Barchart(link_flow1, link_flow2)
+Link_Time_Barchart(link_time1, link_time2)
+OD_Time_Barchart(path_time1, path_time2)
+
+
+    
 
     
