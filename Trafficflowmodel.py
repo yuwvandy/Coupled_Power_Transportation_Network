@@ -231,7 +231,7 @@ class TrafficFlowModel:
         
         
         relative_gap = (denomintor - numerator)/denomintor
-        print(relative_gap)
+#        print(relative_gap)
         if(relative_gap < accuracy):
             return True
         else:
@@ -286,7 +286,7 @@ class TrafficFlowModel:
             print("PERFORMANCE OF LINKS")
             print(self.__dash_line())
             for i in range(self.network.num_of_links()):
-                print("%2d : link= %12s, flow= %8.2f, time= %8.3f, v/c= %.3f" % (i, self.network.edges()[i], link_flow[i], link_time[i], link_vc[i]))
+#                print("%2d : link= %12s, flow= %8.2f, time= %8.3f, v/c= %.3f" % (i, self.network.edges()[i], link_flow[i], link_time[i], link_vc[i]))
                 fnode, tnode = int(self.network.edges()[i][0]) - 1, int(self.network.edges()[i][1]) - 1
                 self.network.flow[fnode, tnode] = link_flow[i]
             print(self.__dash_line())
@@ -297,7 +297,7 @@ class TrafficFlowModel:
                 if counter < self.network.paths_category()[i]:
                     counter = counter + 1
                     print(self.__dash_line())
-                print("%2d : group= %2d, time= %8.3f, path= %s" % (i, self.network.paths_category()[i], path_time[i], self.network.paths()[i]))
+#                print("%2d : group= %2d, time= %8.3f, path= %s" % (i, self.network.paths_category()[i], path_time[i], self.network.paths()[i]))
             print(self.__dash_line())
         else:
             raise ValueError("The report could be generated only after the model is solved!")

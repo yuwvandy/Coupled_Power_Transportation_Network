@@ -166,8 +166,8 @@ def Basemap(Type, lat, lon):
     Base.drawcoastlines()
     Base.drawcountries()
     Base.drawmapboundary()
-    Base.drawparallels(np.arange(lat[0] - latinter/5, lat[1] + latinter/5, latinter/5), labels=[1,0,0,1], fontsize = 10)
-    Base.drawmeridians(np.arange(lon[0] - loninter/5, lon[1] + loninter/5, loninter/5), labels=[1,1,0,1], fontsize = 10)
+    Base.drawparallels(np.arange(lat[0] - latinter/5, lat[1] + 2*latinter/5, latinter/5), labels=[1,0,0,1], fontsize = 20)
+    Base.drawmeridians(np.arange(lon[0] - loninter/5, lon[1] + 2*loninter/5, loninter/5), labels=[1,1,0,1], fontsize = 20)
     
     return Base
 
@@ -207,6 +207,7 @@ def Link_Flow_Barchart(data1, data2):
     plt.ylabel('Link flow')
     plt.xticks(np.arange(0, len(data1), 1))
     plt.legend(bbox_to_anchor=(1, 1), loc='upper left', ncol=1, frameon = 0)
+#    plt.savefig("link_flow.png", dpi = 1500, bbox_inches='tight')
     plt.show()
     
 def Link_Time_Barchart(data1, data2):
@@ -238,6 +239,7 @@ def OD_Time_Barchart(data1, data2):
     plt.ylabel('Paths between OD pair cost/time')
     plt.xticks(np.arange(0, len(data1), 1))
     plt.legend(bbox_to_anchor=(1, 1), loc='upper left', ncol=1, frameon = 0)
+#    plt.savefig("path_time.png", dpi = 1500, bbox_inches='tight')
     plt.show()
 
 
@@ -251,8 +253,10 @@ path_time1 = [385.286, 429.972, 163.903, 208.589]
 path_time2 = [475.059, 508.478, 251.744, 285.158]
 
 Link_Flow_Barchart(link_flow1, link_flow2)
+
 Link_Time_Barchart(link_time1, link_time2)
 OD_Time_Barchart(path_time1, path_time2)
+
 
 
     

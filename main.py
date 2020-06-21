@@ -71,9 +71,9 @@ def Failure_Simulation(Num):
         Hurricanes.append(Hurricane(Hcd.Hurricane_name[i], TXpower, Hcd.Latitude[i], Hcd.Longitude[i], Hcd.color[i]))
         Hurricanes[-1].verticexy(Hcd.Data[i], filelocation = Hcd.Data_Location, Type = 'local')
         Hurricanes[-1].trajectory_plot(townlat = 29.3013, townlon = -94.7977)
-        Hurricanes[-1].Failprob(mu = 304, sigma = 45.6, a = 0.5, b = 1)
+        Hurricanes[-1].Failprob(mu = 304, sigma = 1, a = 0.5, b = 1)
 #        if(i == 0): #Since fail probability is nearly the same among all hurricane sceneria, we need to add some noise
-        Hurricanes[-1].failprob -= 0.3
+#        Hurricanes[-1].failprob -= 0.3
         
         for j in range(Num):
             TX_TP.fail_simu(Hurricanes[-1])
@@ -163,7 +163,7 @@ def Performance(TXTflow, fail_history, Hnum, Num, PowerNum, TXpower, TXtraffic, 
                 print(SigFun)
                 print(TXTflow.link_capacity)
                 TX_TPInter1.InterFunc_decrease(theta, capacity)
-                TXTflow.solve_CFW(1e-6, 1e-5, 1e-2)
+                TXTflow.solve_CFW(1e-6, 1e-4, 1e-2)
                 TXTflow.performance[i, j].append(TXTflow.Cal_performance())
 
                 temp += 1
@@ -207,19 +207,24 @@ TXtraffic.Networkflowplot()
 TXpower.topology(pd.nodefile, pd.edgefile, pd.Type)
 TXpower.Networkflowplot()
 TXtraffic.Networkflowplot()
+#plt.savefig("GV_topology_flow.png", dpi = 1500, bbox_inches='tight')
+
 
 TX_TP = system(name = 'TX_TP', networks = [TXpower, TXtraffic], inters = [TX_TPInter1])
 TX_TP.Systemplot3d()
 TX_TP.local_global_adj_flow()
 TX_TPInter1.system = TX_TP
+#plt.savefig("GV_topology_flow3d.png", dpi = 1500, bbox_inches='tight')
 
 #Peform the hurricane simulation
-Num = 10
+Num = 1
 Length, Hurricanes = Failure_Simulation(Num)
 Power_Performance(Length, Num)
 
+
 #Plot the power network performance under each hurricane sceneria
-H_perform_plot(TXpower.performance[:, :180], Hurricanes)
+H_perform_plot(TXpower.performance[:, :240], Hurricanes)
+#plt.savefig("power_performance.png", dpi = 2000, bbox_inches='tight')
 
 #Calculate the conditional failure probability
 TX_TPInter1.Conditional_prob(0, Num)
@@ -227,13 +232,13 @@ TX_TPInter1.heatmap_conditional_prob()
 
 #Plot the all hurricanes on a single basemap
 Plot_Hurricanes(Hurricanes, Hcd.Hnum, townlon = -94.7977, townlat = 29.3013)
-
+#plt.savefig("hurricane.png", dpi = 3000, bbox_inches='tight')
 ##Traffic Performance
 theta = 0.2
 Performance(TXTflow, TX_TP.fail_history, Hcd.Hnum, Num, TXpower.Nnum, TXpower, TXtraffic, TX_TPInter1, td.capacity, theta)
 TXtraffic.performance = np.average(sf.Unit_Length(TXTflow.performance), axis = 1)
 Traffic_Perform_Plot(TXtraffic.performance, Hurricanes)
-
+#plt.savefig("traffic_perform.png", dpi = 2000, bbox_inches='tight')
 
 
 

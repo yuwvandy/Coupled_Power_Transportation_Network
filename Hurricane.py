@@ -122,7 +122,7 @@ class Hurricane(object):
         for i in range(len(self.netX)):
             for j in range(len(self.Nx)):
                 temp = self.Rm[j]/self.Dist[i, j]
-                self.v[i, j] = self.ws[j]*(temp**b*np.exp(1 - temp**b))**a
+                self.v[i, j] = np.max(self.ws)*(temp**b*np.exp(1 - temp**b))**a
     
     def Failprob(self, mu, sigma, a, b):
         '''Calculate the fail probabiilty of each transmission towers
@@ -134,14 +134,14 @@ class Hurricane(object):
         self.ED_Rm()
         self.NetworkXY()
         self.Dist()
-        self.v(a = 0.5, b = 2)
+        self.v(a = 0.5, b = 0.75)
         
         self.failprob = np.zeros(len(self.netX))
         for i in range(len(self.netX)):
             temp = 0
             for j in range(len(self.Nx)):
-                v = 1.287 * self.v[i, j] #Peak gust wind speed
-                prob = norm.cdf(np.log(v/mu)/sigma)
+                vv = 1.287 * self.v[i, j] #Peak gust wind speed
+                prob = norm.cdf(np.log(vv/mu)/sigma)
                 if(prob >= temp):
                     temp = prob
             self.failprob[i] = temp
@@ -149,7 +149,15 @@ class Hurricane(object):
         
         self.failprob *= 1 ##Lack of knowledge, need to be further researched on
 
-
+#import Hdata as Hcd
+#Hurricanes = []
+#for i in range(Hcd.Hnum):
+#    Hurricanes.append(Hurricane(Hcd.Hurricane_name[i], TXpower, Hcd.Latitude[i], Hcd.Longitude[i], Hcd.color[i]))
+#    Hurricanes[-1].verticexy(Hcd.Data[i], filelocation = Hcd.Data_Location, Type = 'local')
+##    Hurricanes[-1].trajectory_plot(townlat = 29.3013, townlon = -94.7977)
+#    Hurricanes[-1].Failprob(mu = 100, sigma = 1, a = 0.5, b = 1)
+##        if(i == 0): #Since fail probability is nearly the same among all hurricane sceneria, we need to add some noise
+##    Hurricanes[-1].failprob -= 0.3
         
         
         

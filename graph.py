@@ -145,8 +145,8 @@ class Graph(object):
         self.Base.drawcoastlines()
         self.Base.drawcountries()
         self.Base.drawmapboundary()
-        self.Base.drawparallels(np.arange(self.lat[0] - latinter/5, self.lat[1] + latinter/5, latinter/5), labels=[1,0,0,1], fontsize = 10)
-        self.Base.drawmeridians(np.arange(self.lon[0] - loninter/5, self.lon[1] + loninter/5, loninter/5), labels=[1,1,0,1], fontsize = 10)
+        self.Base.drawparallels(np.arange(self.lat[0] - latinter/5, self.lat[1] + latinter/5, latinter/5), labels=[1,0,0,1], fontsize = 13)
+        self.Base.drawmeridians(np.arange(self.lon[0] - loninter/5, self.lon[1] + loninter/5, loninter/5), labels=[1,1,0,1], fontsize = 13)
 
     def Networkplot(self):
         """Plot the network on the specified base map

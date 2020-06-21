@@ -42,6 +42,7 @@ class system(object):
         from mpl_toolkits import mplot3d
         import matplotlib.pyplot as plt
         import numpy as np
+        from mpl_toolkits.mplot3d import Axes3D
         
         fig = plt.figure(figsize = (15, 10))
         ax = fig.add_subplot(111, projection = '3d')
@@ -64,6 +65,8 @@ class system(object):
         
             #Network node plot
             ax.scatter3D(X, Y, self.Zlevel[network.name], depthshade = False, zdir = 'z', marker = 's', color = network.c, label = network.name, s = 40)
+#            for i in range(len(X)):
+#                ax.text(X[i], Y[i], self.Zlevel[network.name], '{}'.format(i+1), size=15, zorder=1, color = network.c) 
             ax.plot_surface(x, y, z, linewidth=0, antialiased=False, alpha=0.05, color = network.c)
         
             #Network edge plot
@@ -93,7 +96,7 @@ class system(object):
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
-        ax.legend(frameon = 0)
+        ax.legend(frameon = 0, )
         
         
     def fail_simu(self, hurricane):
@@ -173,10 +176,16 @@ class system(object):
         stack = []
         stack.append(0)
         while(stack != []):
-            v = stack.pop()
+            v = stack[0]
+            stack.remove(v)
             for i in range(self.Nnum):
                 if(self.flowadj2[v, i] != 0):
-                    stack.append(i)
+                    temp = len(stack)
+                    for j in range(len(stack)):
+                        if(self.flowadj2[i, stack[j]] != 0):
+                            temp = j
+                            break
+                    stack.insert(temp, i)
             if(v == 0):
                 flow_sum = np.sum(self.flowadj2[v, :])
             else:
